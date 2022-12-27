@@ -7,4 +7,3 @@ trailing_comma = "Never"
 match_block_trailing_comma = true
 
 fn_single_line = true
-space_before_colon = true

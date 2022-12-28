@@ -1,3 +1,4 @@
+use hex;
 use std::fmt::Display;
 use std::ops::BitXor;
 use std::str;
@@ -169,6 +170,15 @@ pub type ASCIIData = Data<StandardASCII>;
 
 impl ASCIIData {
   pub fn into<B: ByteRepresentation>(&self) -> Data<B> { Data::from(B::default().ascii_to_bytes(&self.bytes)) }
+
+  // This is not the same as directly converting hexadecimal into ASCII; this is a special ASCII encoding in hex.
+  pub fn from_hex_data(value: HexData) -> ASCIIData { ASCIIData::from(hex::decode(value.bytes).unwrap()) }
+
+  // Same goes for this one; this is not equivalent to From<String>() for ASCIIData.
+  pub fn from_hex<T: AsRef<[u8]>>(value: T) -> ASCIIData { ASCIIData::from(hex::decode(value).unwrap()) }
+
+  // Same goes for this one; this is not equivalent to to_string().
+  pub fn to_hex_string(self) -> String { hex::encode(self.bytes) }
 }
 
 impl<B: ByteRepresentation> From<&Data<B>> for ASCIIData {

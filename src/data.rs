@@ -2,19 +2,27 @@ use std::fmt::Display;
 use std::ops::BitXor;
 use std::str;
 
-pub trait BaseRepresentation: Default + Clone {
-  fn base(&self) -> u8;
-  fn digit_to_ascii(&self, digit: u8) -> u8;
-  fn ascii_to_digit(&self, ascii_code: u8) -> u8;
+//-------------------------------
+//   Byte Representation Trait
+//-------------------------------
 
-  fn digits_to_ascii(&self, digits: &Vec<u8>) -> Vec<u8> {
-    Vec::from_iter(digits.into_iter().map(|x| self.digit_to_ascii(*x)))
+pub trait ByteRepresentation: Default + Clone {
+  fn byte_to_ascii(&self, byte: u8) -> u8;
+
+  fn ascii_to_byte(&self, ascii_code: u8) -> u8;
+
+  fn bytes_to_ascii(&self, bytes: &Vec<u8>) -> Vec<u8> {
+    Vec::from_iter(bytes.into_iter().map(|x| self.byte_to_ascii(*x)))
   }
 
-  fn ascii_to_digits(&self, ascii_codes: &Vec<u8>) -> Vec<u8> {
-    Vec::from_iter(ascii_codes.into_iter().map(|x| self.ascii_to_digit(*x)))
+  fn ascii_to_bytes(&self, ascii_codes: &Vec<u8>) -> Vec<u8> {
+    Vec::from_iter(ascii_codes.into_iter().map(|x| self.ascii_to_byte(*x)))
   }
 }
+
+//---------------------------------
+//   Base 16 Byte Representation
+//---------------------------------
 
 #[derive(Clone)]
 pub struct StandardBase16 {
@@ -25,12 +33,10 @@ impl Default for StandardBase16 {
   fn default() -> Self { Self { ascii_lookup: Vec::from("0123456789abcdef") } }
 }
 
-impl BaseRepresentation for StandardBase16 {
-  fn base(&self) -> u8 { 16 }
+impl ByteRepresentation for StandardBase16 {
+  fn byte_to_ascii(&self, byte: u8) -> u8 { self.ascii_lookup[byte as usize] }
 
-  fn digit_to_ascii(&self, digit: u8) -> u8 { self.ascii_lookup[digit as usize] }
-
-  fn ascii_to_digit(&self, ascii_code: u8) -> u8 {
+  fn ascii_to_byte(&self, ascii_code: u8) -> u8 {
     if 48 <= ascii_code && ascii_code <= 57 {
       ascii_code - 48
     } else {
@@ -38,6 +44,10 @@ impl BaseRepresentation for StandardBase16 {
     }
   }
 }
+
+//---------------------------------
+//   Base 64 Byte Representation
+//---------------------------------
 
 #[derive(Clone)]
 pub struct StandardBase64 {
@@ -50,12 +60,10 @@ impl Default for StandardBase64 {
   }
 }
 
-impl BaseRepresentation for StandardBase64 {
-  fn base(&self) -> u8 { 64 }
+impl ByteRepresentation for StandardBase64 {
+  fn byte_to_ascii(&self, byte: u8) -> u8 { self.ascii_lookup[byte as usize] }
 
-  fn digit_to_ascii(&self, digit: u8) -> u8 { self.ascii_lookup[digit as usize] }
-
-  fn ascii_to_digit(&self, ascii_code: u8) -> u8 {
+  fn ascii_to_byte(&self, ascii_code: u8) -> u8 {
     if 65 <= ascii_code && ascii_code <= 90 {
       ascii_code - 65
     } else if 97 <= ascii_code && ascii_code <= 122 {
@@ -70,46 +78,63 @@ impl BaseRepresentation for StandardBase64 {
   }
 }
 
+//-------------------------------
+//   ASCII Byte Representation
+//-------------------------------
+
+#[derive(Clone, Default)]
+pub struct StandardASCII {}
+
+impl ByteRepresentation for StandardASCII {
+  fn byte_to_ascii(&self, byte: u8) -> u8 { byte }
+
+  fn ascii_to_byte(&self, ascii_code: u8) -> u8 { ascii_code }
+}
+
+//----------------------
+//   Byte Data Struct
+//----------------------
+
 #[derive(Default, Clone)]
-pub struct Data<B: BaseRepresentation> {
-  digits: Vec<u8>,
+pub struct Data<B: ByteRepresentation> {
+  bytes: Vec<u8>,
   base_rep: B
 }
 
-impl<B: BaseRepresentation> Data<B> {
-  pub fn len(&self) -> usize { self.digits.len() }
+impl<B: ByteRepresentation> Data<B> {
+  pub fn len(&self) -> usize { self.bytes.len() }
 
-  pub fn digits(&self) -> &Vec<u8> { &self.digits }
+  pub fn bytes(&self) -> &Vec<u8> { &self.bytes }
 }
 
-impl<B: BaseRepresentation> IntoIterator for Data<B> {
+impl<B: ByteRepresentation> IntoIterator for Data<B> {
   type Item = u8;
   type IntoIter = std::vec::IntoIter<Self::Item>;
 
-  fn into_iter(self) -> Self::IntoIter { self.digits.into_iter() }
+  fn into_iter(self) -> Self::IntoIter { self.bytes.into_iter() }
 }
 
-impl<B: BaseRepresentation> FromIterator<u8> for Data<B> {
+impl<B: ByteRepresentation> FromIterator<u8> for Data<B> {
   fn from_iter<T: IntoIterator<Item = u8>>(iter: T) -> Self { Self::from(Vec::from_iter(iter)) }
 }
 
-impl<B: BaseRepresentation> Into<Vec<u8>> for Data<B> {
-  fn into(self) -> Vec<u8> { self.digits }
+impl<B: ByteRepresentation> From<Data<B>> for Vec<u8> {
+  fn from(value: Data<B>) -> Self { value.bytes }
 }
 
-impl<B: BaseRepresentation> From<Vec<u8>> for Data<B> {
-  fn from(value: Vec<u8>) -> Self { Self { digits: value, base_rep: B::default() } }
+impl<B: ByteRepresentation> From<Vec<u8>> for Data<B> {
+  fn from(value: Vec<u8>) -> Self { Self { bytes: value, base_rep: B::default() } }
 }
 
-impl<B: BaseRepresentation> From<String> for Data<B> {
-  fn from(value: String) -> Self { Self::from(B::default().ascii_to_digits(&Vec::from(value))) }
+impl<B: ByteRepresentation> From<String> for Data<B> {
+  fn from(value: String) -> Self { Self::from(B::default().ascii_to_bytes(&Vec::from(value))) }
 }
 
-impl<B: BaseRepresentation> From<&str> for Data<B> {
+impl<B: ByteRepresentation> From<&str> for Data<B> {
   fn from(value: &str) -> Self { Self::from(value.to_string()) }
 }
 
-impl<B: BaseRepresentation> BitXor<&Data<B>> for &Data<B> {
+impl<B: ByteRepresentation> BitXor<&Data<B>> for &Data<B> {
   type Output = Data<B>;
 
   // Challenge 2, Set 1
@@ -123,68 +148,85 @@ impl<B: BaseRepresentation> BitXor<&Data<B>> for &Data<B> {
     let mut res = Vec::with_capacity(n1);
 
     for i in 0..n1 {
-      res.push(self.digits[i] ^ rhs.digits[i]);
+      res.push(self.bytes[i] ^ rhs.bytes[i]);
     }
 
     return Data::from(res);
   }
 }
 
-impl<B: BaseRepresentation> BitXor<Data<B>> for Data<B> {
+impl<B: ByteRepresentation> BitXor<Data<B>> for Data<B> {
   type Output = Data<B>;
 
   fn bitxor(self, rhs: Data<B>) -> Self::Output { &self ^ &rhs }
 }
 
-impl<B: BaseRepresentation> Display for Data<B> {
+//-----------------------
+//   ASCII Data Struct
+//-----------------------
+
+pub type ASCIIData = Data<StandardASCII>;
+
+impl ASCIIData {
+  pub fn into<B: ByteRepresentation>(&self) -> Data<B> { Data::from(B::default().ascii_to_bytes(&self.bytes)) }
+}
+
+impl<B: ByteRepresentation> From<&Data<B>> for ASCIIData {
+  fn from(value: &Data<B>) -> Self { Self::from(value.base_rep.bytes_to_ascii(&value.bytes)) }
+}
+
+impl<B: ByteRepresentation> Display for Data<B> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    let ascii_codes = self.base_rep.digits_to_ascii(&self.digits);
-
-    let s = match str::from_utf8(&ascii_codes.as_slice()) {
-      Ok(v) => v,
-      Err(_) => panic!()
-    };
-
-    return write!(f, "{}", s);
+    let ascii_codes = self.base_rep.bytes_to_ascii(&self.bytes);
+    return write!(f, "{}", str::from_utf8(&ascii_codes.as_slice()).unwrap());
   }
 }
 
+//-----------------------------
+//   Hexadecimal Data Struct
+//-----------------------------
+
 pub type HexData = Data<StandardBase16>;
+
+//-------------------------
+//   Base 64 Data Struct
+//-------------------------
+
 pub type B64Data = Data<StandardBase64>;
 
-impl HexData {
+impl From<&HexData> for B64Data {
   // Challenge 1, Set 1
-  pub fn to_b64(&self) -> B64Data {
-    let n = self.len();
-    let mut b64_digits: Vec<u8> = Vec::with_capacity(2 * n / 3);
+  fn from(value: &HexData) -> Self {
+    let n = value.len();
+    let mut b64_bytes: Vec<u8> = Vec::with_capacity(2 * n / 3);
 
     let mut acc: u16 = 0;
     let start_count = n % 3;
     let mut count = if start_count == 0 { 3 } else { start_count };
     let pows = vec![1, 16, 256];
 
-    for digit in self.digits() {
-      acc += (*digit as u16) * pows[count - 1];
+    for bytes in value.bytes() {
+      acc += (*bytes as u16) * pows[count - 1];
       count -= 1;
 
       if count == 0 {
-        b64_digits.push((acc / 64) as u8);
-        b64_digits.push((acc % 64) as u8);
+        b64_bytes.push((acc / 64) as u8);
+        b64_bytes.push((acc % 64) as u8);
 
         acc = 0;
         count = 3;
       }
     }
 
-    return B64Data::from(b64_digits);
+    return B64Data::from(b64_bytes);
   }
-
-  pub fn decode(&self) -> String { self.to_b64().to_string() }
 }
 
-mod tests {
-  use super::*;
+//----------------
+//   Unit Tests
+//----------------
 
+mod tests {
   #[test]
   fn test_hex_to_b64() -> Result<(), String> {
     let inputs = vec![
@@ -200,7 +242,7 @@ mod tests {
     ];
 
     for i in 0..inputs.len() {
-      let res = HexData::from(inputs[i].to_string()).decode();
+      let res = super::B64Data::from(&super::HexData::from(inputs[i])).to_string();
       if res != results[i] {
         return Err(format!("input {} yields wrong output: {}", i, res));
       };
@@ -211,8 +253,8 @@ mod tests {
 
   #[test]
   fn test_hex_xor() -> Result<(), String> {
-    let hex1 = HexData::from("1c0111001f010100061a024b53535009181c".to_string());
-    let hex2 = HexData::from("686974207468652062756c6c277320657965".to_string());
+    let hex1 = super::HexData::from("1c0111001f010100061a024b53535009181c".to_string());
+    let hex2 = super::HexData::from("686974207468652062756c6c277320657965".to_string());
 
     let result = "746865206b696420646f6e277420706c6179";
     let res = (hex1 ^ hex2).to_string();

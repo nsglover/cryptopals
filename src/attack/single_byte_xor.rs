@@ -54,12 +54,15 @@ pub fn attack_single_byte_xor(ciphertext: &ASCIIData) -> (u8, (f32, f32), ASCIID
   return argmax.unwrap();
 }
 
+#[allow(unused_imports)]
 mod tests {
+  use crate::data::ASCIIData;
+
   // Challenge 3, Set 1
   #[test]
   fn test_attack() -> Result<(), String> {
     let ciphertext = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736";
-    let (key, _, msg) = super::attack_single_byte_xor(&crate::data::ASCIIData::from_hex(ciphertext));
+    let (key, _, msg) = super::attack_single_byte_xor(&ASCIIData::from_hex(ciphertext));
     if key != 88 || msg.to_string() != "Cooking MC's like a pound of bacon".to_string() {
       return Err(format!("Attack failed; key was {} with message {}", key, msg));
     }

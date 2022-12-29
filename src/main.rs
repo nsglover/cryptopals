@@ -1,3 +1,4 @@
-fn main() {
-  println!("");
-}
+mod attack;
+mod data;
+
+fn main() {}

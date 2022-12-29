@@ -236,7 +236,10 @@ impl From<&HexData> for B64Data {
 //   Unit Tests
 //----------------
 
+#[allow(unused_imports)]
 mod tests {
+  use super::*;
+
   #[test]
   fn test_hex_to_b64() -> Result<(), String> {
     let inputs = vec![
@@ -252,7 +255,7 @@ mod tests {
     ];
 
     for i in 0..inputs.len() {
-      let res = super::B64Data::from(&super::HexData::from(inputs[i])).to_string();
+      let res = B64Data::from(&HexData::from(inputs[i])).to_string();
       if res != results[i] {
         return Err(format!("input {} yields wrong output: {}", i, res));
       };

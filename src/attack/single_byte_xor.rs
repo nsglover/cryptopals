@@ -1,11 +1,13 @@
 use crate::data::*;
 use std::cmp;
 
+#[allow(dead_code)]
 const ENGLISH_CHAR_FREQUENCIES: [f32; 27] = [
   0.0653, 0.0126, 0.0223, 0.0328, 0.1027, 0.0198, 0.0162, 0.0498, 0.0567, 0.0010, 0.0056, 0.0332, 0.0203, 0.0517,
   0.0616, 0.0150, 0.0008, 0.0499, 0.0532, 0.0752, 0.0228, 0.0080, 0.0170, 0.0014, 0.0143, 0.0005, 0.1823
 ];
 
+#[allow(dead_code)]
 pub fn freq_and_alphabet_score(data: &ASCIIData) -> f32 {
   fn uppercase(b: usize) -> bool { 65 <= b && b <= 90 }
   fn lowercase(b: usize) -> bool { 97 <= b && b <= 122 }
@@ -38,6 +40,7 @@ pub fn freq_and_alphabet_score(data: &ASCIIData) -> f32 {
   return norm_squared;
 }
 
+#[allow(dead_code)]
 pub fn attack_single_byte_xor(ciphertext: &ASCIIData) -> (u8, f32, ASCIIData) {
   let n = ciphertext.len();
   let build_key = |character| ASCIIData::from(vec![character; n]);

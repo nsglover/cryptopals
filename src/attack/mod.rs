@@ -1,1 +1,2 @@
-pub mod single_byte_xor;
+mod repeating_key_xor;
+mod single_byte_xor;
